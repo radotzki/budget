@@ -1,0 +1,23 @@
+{
+  "name": "budget",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "functions-framework --target=incoming",
+    "deploy": "gcloud functions deploy budget --region=us-central1",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "israeli-bank-scrapers": "^0.8.1",
+    "puppeteer": "^2.1.1",
+    "twilio": "^3.39.5"
+  },
+  "devDependencies": {
+    "@google-cloud/functions-framework": "^1.4.0"
+  }
+}
