@@ -46,7 +46,7 @@ async function getBalance() {
   if (scrapeResult.success) {
     const sums = {};
     scrapeResult.accounts.forEach((account) =>
-      sums[account.accountNumber] = account.txns.reduce((sum, tx) => sum + tx.originalAmount, 0)
+      sums[account.accountNumber] = account.txns.reduce((sum, tx) => sum + (isCompletedTx(tx) ? tx.chargedAmount : tx.originalAmount), 0)
     );
     const fixedPrice = Math.ceil(Math.abs(sums[accounts.Shared]));
     const weCouldLiveWithoutIt = Math.ceil(Math.abs(sums[accounts.May] + sums[accounts.Itay]));
@@ -71,4 +71,8 @@ function getLastSaturday() {
   prevSaturday.setDate(prevSaturday.getDate() - (prevSaturday.getDay() + 1) % 7);
   prevSaturday.setHours(0, 0, 0, 0);
   return prevSaturday;
+}
+
+function isCompletedTx(tx) {
+  return tx.status === 'completed';
 }
