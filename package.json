@@ -5,19 +5,27 @@
   "main": "index.js",
   "scripts": {
     "start": "functions-framework --target=incoming",
-    "deploy": "gcloud functions deploy budget --region=us-central1",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "deploy": "gcloud functions deploy budget --region=us-central1 --runtime=nodejs22",
+    "test": "node --test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^8.2.0",
-    "israeli-bank-scrapers": "^0.8.1",
-    "puppeteer": "^2.1.1",
-    "twilio": "^3.39.5"
+    "dotenv": "^17.4.2",
+    "israeli-bank-scrapers": "^6.13.0",
+    "puppeteer": "^25.17.0",
+    "twilio": "^6.3.0"
   },
   "devDependencies": {
-    "@google-cloud/functions-framework": "^1.4.0"
+    "@google-cloud/functions-framework": "^5.0.5"
+  },
+  "overrides": {
+    "israeli-bank-scrapers": {
+      "puppeteer": "$puppeteer"
+    }
+  },
+  "engines": {
+    "node": ">=22.22.2"
   }
 }

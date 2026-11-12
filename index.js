@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 const twilio = require('twilio');
 const { createScraper } = require('israeli-bank-scrapers');
 const puppeteer = require('puppeteer');
@@ -15,7 +15,8 @@ const whatsappNumber = process.env.WHATSAPP_NUMBER;
 exports.incoming = async (req, res) => {
   try {
     const to = req.body.From || whatsappNumber;
-    sendMessage('🤖 מחשב נתונים.. זה יקח דקה.. ', to);
+    sendMessage('🤖 מחשב נתונים.. זה יקח דקה.. ', to)
+      .catch((e) => console.error(`Failed to send the progress message: ${e.message}`));
     const { fixedPrice, weCouldLiveWithoutIt } = await getBalance();
     const message = `💡 זה מה שמצאתי 💡\nהוצאות קבועות ${fixedPrice} ש״ח\nיכולנו בלי זה ${weCouldLiveWithoutIt} ש״ח`;
     await sendMessage(message, to);
