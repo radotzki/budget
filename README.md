@@ -70,6 +70,12 @@ keeps the function's existing variables. See below for a new function.
    see "Deploying a new function".
 3. **Its environment variables are still set** (names under
    `environmentVariables` in the output above, see the list below).
+   **`TWILIO_AUTH_TOKEN` must be there.** The function checks every request's
+   Twilio signature with it, and without it the function rejects every
+   request (HTTP 500), so WhatsApp gets no answer. The logs then say
+   `Rejected request: TWILIO_AUTH_TOKEN is not set`. It has to be the auth
+   token of the Twilio account that owns the WhatsApp sandbox (Twilio console,
+   Account info). If you rotate the token in Twilio, update it here too.
 4. **Twilio's webhook URL** (WhatsApp sandbox settings, "When a message comes
    in") is the `httpsTrigger.url` above. Deploying with the same name keeps it.
 
@@ -85,6 +91,11 @@ keeps the function's existing variables. See below for a new function.
    - `Failed for the following reason: <type>` is the scraper's error (for
      example a changed Max login page or wrong credentials).
    - "memory limit exceeded": raise `--memory` to `2048MB`.
+   - `Rejected request: TWILIO_AUTH_TOKEN is not set`: set it
+     (`npm run deploy -- --update-env-vars=TWILIO_AUTH_TOKEN=...`).
+   - `Rejected request: X-Twilio-Signature does not match (checked <urls>)`:
+     the token is wrong, or Twilio's webhook URL isn't one of the URLs listed.
+     Set `TWILIO_WEBHOOK_URL` to exactly the URL in Twilio's console.
 
 Twilio waits only 15 seconds for the webhook to answer, and this function
 answers after about a minute, so Twilio's console may log a timeout (error
@@ -106,6 +117,7 @@ settings). Keep the values out of git.
 | `ITAYS_CARD` | Card number for Itay's card |
 | `SHARED_CRAD` | Card number for the shared card (the name's spelling is what the code reads) |
 | `WHATSAPP_NUMBER` | Fallback recipient, `whatsapp:+972...`, used when a request has no `From` |
+| `TWILIO_WEBHOOK_URL` | Optional. The webhook URL exactly as set in Twilio's console. Without it the function rebuilds it from the request (`https://us-central1-<project>.cloudfunctions.net/budget` on 1st gen), which is right unless Twilio calls another address, such as a custom domain or a URL with a query string. Set it when testing locally through a tunnel. |
 
 ### Deploying a new function
 
@@ -136,6 +148,22 @@ deploy gives it. After that, change `--no-gen2` to `--gen2` here.
 
 ## Security
 
-The function is public because Twilio has to reach it, and the code doesn't yet
-check Twilio's request signature, so anyone with the URL can trigger a scrape.
-Keep the URL private. `--max-instances=1` limits what that costs.
+The function is public because Twilio has to reach it. To make sure only Twilio
+can use it, every request must carry a valid `X-Twilio-Signature` header:
+Twilio signs the webhook URL plus the POST parameters with the account's auth
+token (HMAC-SHA1, see Twilio's "Webhooks security" docs). Before it starts the
+browser or logs in to the bank, the function checks the signature with
+`TWILIO_AUTH_TOKEN`:
+
+- no signature, or one that doesn't match: HTTP 403, nothing runs;
+- `TWILIO_AUTH_TOKEN` not set: HTTP 500 for every request, with one log line
+  saying so. It fails closed, so a deploy that loses the token stops the
+  function rather than leaving it open.
+
+The check also covers the `From` parameter, so nobody can change who the
+totals go to. `--max-instances=1` still limits what a flood of rejected
+requests costs.
+
+Running locally (`npm start`), requests need a signature too. To test with real
+WhatsApp messages, expose the local server through a tunnel, point Twilio's
+webhook at the tunnel URL and put that URL in `.env` as `TWILIO_WEBHOOK_URL`.
