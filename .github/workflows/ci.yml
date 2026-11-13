@@ -1,0 +1,56 @@
+# Tests and a dependency audit. Needs no secrets and deploys nothing: the function is deployed by
+# hand with `npm run deploy`, never from here.
+#
+# When it runs: on every push and pull request, every Monday, and by hand (Actions > CI > Run
+# workflow). A failing scheduled run emails the repository owner (GitHub's default setting).
+# Dependabot alerts are off on this repository, so the weekly audit is what makes a new advisory
+# visible.
+#
+# The audit gates on all dependencies, dev included: the one dev dependency, the Functions
+# Framework, is the server the function runs on, and whether Cloud Functions' build installs the
+# lockfile's copy is not something this repository decides. Today it has 3 moderate advisories,
+# which --audit-level=high lets through.
+name: CI
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '23 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      # The tests stub Puppeteer, so skip its Chrome download.
+      - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+      - run: npm test
+
+  audit:
+    name: npm audit (critical and high)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      # Reads the lockfile alone; nothing is installed.
+      - run: npm audit --audit-level=high
