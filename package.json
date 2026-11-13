@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "functions-framework --target=incoming",
-    "deploy": "gcloud functions deploy budget --region=us-central1 --runtime=nodejs22",
+    "deploy": "gcloud functions deploy budget --no-gen2 --region=us-central1 --runtime=nodejs22 --entry-point=incoming --trigger-http --allow-unauthenticated --memory=1024MB --timeout=300s --max-instances=1 --source=.",
     "test": "node --test"
   },
   "keywords": [],
